@@ -578,6 +578,7 @@ with st.sidebar:
         st.error("Keine Daten gefunden. Lege all_poses.csv und mes_scores.csv unter ./daten ab.")
         st.stop()
 
+    st.info("zusätziche Auswahl: Analysedaten Subsequent / YOLOv8")    
     selected_label = st.selectbox("Videosequenz", run_index["label"].tolist())
     selected_row = run_index[run_index["label"] == selected_label].iloc[0]
     selected_key = selected_row["video_key"]
