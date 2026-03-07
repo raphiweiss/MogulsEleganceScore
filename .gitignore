@@ -1,0 +1,22 @@
+# Jupyter
+.ipynb_checkpoints/
+
+# VSCode
+.vscode/
+
+# Symlink zu allen rohen Videos vom Projektstart(zu groß, separat von OneDrive laden)
+/videos
+
+# YOLOv8 outputs
+runs/
+playground_out/
+
+# model and weights
+yolov8n-pose/
+*.pt
+*.onnx
+
+# Python
+__pycache__/
+*.pyc
+.venv/
