@@ -569,6 +569,8 @@ videos_df = discover_video_files(VIDEO_DIR)
 run_index = build_run_index(scores_df, poses_df, videos_df)
 scatter_df = build_scatter_df(scores_df, fis_df)
 
+
+
 with st.sidebar:
     st.header("Steuerung")
 
@@ -589,6 +591,21 @@ with st.sidebar:
 
     ts_df = compute_plot_timeseries(pose_subset)
 
+    view_mode = st.radio(
+        "Anzeige",
+        ["Video", "Frame"],
+        horizontal=True,
+    )
+
+    max_index = max(len(ts_df) - 1, 0)
+    current_idx = st.slider(
+        "Frame",
+        min_value=0,
+        max_value=max_index,
+        value=min(60, max_index),
+        step=1,
+    )
+
     x_mode = st.radio(
         "X-Achse",
         ["timestamp_sec", "frame"],
@@ -597,21 +614,20 @@ with st.sidebar:
     )
 
     metric_options = [c for c in metric_config().keys() if c in ts_df.columns]
+
     metric_1 = st.selectbox(
-    "Metrik 1",
-    metric_options,
-    index=0,
-    format_func=lambda x: metric_config()[x]["label"])
+        "Metrik 1",
+        metric_options,
+        index=0,
+        format_func=lambda x: metric_config()[x]["label"],
+    )
 
     metric_2 = st.selectbox(
         "Metrik 2",
         metric_options,
         index=min(1, len(metric_options) - 1),
-        format_func=lambda x: metric_config()[x]["label"])
-
-
-    max_index = max(len(ts_df) - 1, 0)
-    current_idx = st.slider("Frame", min_value=0, max_value=max_index, value=min(60, max_index), step=1)
+        format_func=lambda x: metric_config()[x]["label"],
+    )
 
     st.markdown("### Info")
     st.info("folgt von Simon")
@@ -620,24 +636,31 @@ current_row = ts_df.iloc[current_idx]
 current_x = float(current_row[x_mode])
 
 # ------------------------------------------------------------
-# Layout: links Video + Radar/MES, rechts Metriken + Scatter
+# Layout: links Video/Frame + Radar/MES, rechts Metriken + Scatter
 # ------------------------------------------------------------
 left_col, right_col = st.columns([1.15, 1.0], gap="small")
 
 with left_col:
-    st.markdown("### Video")
+    st.markdown(f"### {view_mode}")
     video_path = selected_row["video_path"]
 
     if video_path and Path(video_path).exists():
-        frame_number = int(ts_df.iloc[current_idx]["frame"])
-        frame_img = get_video_frame(video_path, frame_number)
-
-        if frame_img is not None:
-            st.image(frame_img, use_container_width=True)
+        if view_mode == "Video":
+            st.video(str(video_path))
         else:
-            st.warning(f"Frame {frame_number} konnte nicht geladen werden.")
+            frame_number = int(ts_df.iloc[current_idx]["frame"])
+            frame_img = get_video_frame(video_path, frame_number)
+
+            if frame_img is not None:
+                st.image(frame_img, use_container_width=True)
+                st.caption(
+                    f"Frame {frame_number} | "
+                    f"t = {ts_df.iloc[current_idx]['timestamp_sec']:.2f} s"
+                )
+            else:
+                st.warning(f"Frame {frame_number} konnte nicht geladen werden.")
     else:
-        st.info("Kein passendes Video im ./videos-Ordner gefunden.")
+        st.info("Kein passendes Video im Video-Ordner gefunden.")
 
     radar_col, mes_col = st.columns([1, 1], gap="small")
 
@@ -654,7 +677,15 @@ with left_col:
 
         score_rows = pd.DataFrame(
             {
-                "Metrik": ["Rhythmus", "Symmetrie", "Stabilität", "Smoothness", "Kompaktheit", "Line Integrity", "Total"],
+                "Metrik": [
+                    "Rhythmus",
+                    "Symmetrie",
+                    "Stabilität",
+                    "Smoothness",
+                    "Kompaktheit",
+                    "Line Integrity",
+                    "Total",
+                ],
                 "MES": [
                     summary.get("R", np.nan) * 10 if pd.notna(summary.get("R", np.nan)) else np.nan,
                     summary.get("Y", np.nan) * 10 if pd.notna(summary.get("Y", np.nan)) else np.nan,
@@ -689,12 +720,12 @@ with right_col:
     scatter_fig = make_scatter_figure(scatter_df, selected_key=selected_key)
     st.plotly_chart(scatter_fig, use_container_width=True, config={"displayModeBar": False})
 
-with st.expander("Debug / geladene Daten"):
-    st.write("App-Verzeichnis:", str(APP_DIR))
-    st.write("Pose-Datei gefunden:", POSES_PATH.exists())
-    st.write("Score-Datei gefunden:", SCORES_PATH.exists())
-    st.write("Video-Ordner gefunden:", VIDEO_DIR.exists())
-    st.write("Ausgewählte Sequenz:", selected_label)
-    st.write("Frames Pose-Daten:", len(pose_subset))
-    st.dataframe(ts_df.head(), use_container_width=True)
+# with st.expander("Debug / geladene Daten"):
+#     st.write("App-Verzeichnis:", str(APP_DIR))
+#     st.write("Pose-Datei gefunden:", POSES_PATH.exists())
+#     st.write("Score-Datei gefunden:", SCORES_PATH.exists())
+#     st.write("Video-Ordner gefunden:", VIDEO_DIR.exists())
+#     st.write("Ausgewählte Sequenz:", selected_label)
+#     st.write("Frames Pose-Daten:", len(pose_subset))
+#     st.dataframe(ts_df.head(), use_container_width=True)
     
