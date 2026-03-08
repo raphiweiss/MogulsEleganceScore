@@ -10,7 +10,10 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 import cv2
+import textwrap
+import time
 
+from streamlit_autorefresh import st_autorefresh
 
 # ------------------------------------------------------------
 # Konfiguration
@@ -36,39 +39,99 @@ st.markdown(
     """
     <style>
 
-        .block-container {
-            padding-top: 1.6rem;
-            padding-bottom: 0.6rem;
-            max-width: 98%;
+    section[data-testid="stSidebar"] {
+        min-width: 280px;
+    }
+    
 
-        h1 {
-            font-size: 1.8rem !important;
-            margin-bottom: 0.3rem !important;
-        }
+    .block-container {
+        padding-top: 1.5rem;
+        padding-bottom: 0.25rem;
+        max-width: 100%;
+    }
 
-        h3 {
-            margin-top: 0.4rem !important;
-            margin-bottom: 0.3rem !important;
-            line-height: 1.2 !important;
-        }
+    h1, h2 {
+        line-height: 1.25 !important;
+        margin-top: 0 !important;
+        margin-bottom: 0.4rem !important;
+        overflow: visible !important;
+        white-space: normal !important;
+    }
+    h2 {
+        margin-top: 0.3rem;
+    }
+    }
 
-        div[data-testid="stMetric"] {
-            padding: 0.2rem 0.3rem;
-        }
+    h3 {
+        font-size: 1.05rem !important;
+        line-height: 1.15 !important;
+        margin-top: 0.2rem !important;
+        margin-bottom: 0.2rem !important;
+    }
 
-        .stPlotlyChart {
-            margin-bottom: 0.2rem !important;
-        }
+    .stPlotlyChart {
+        margin-bottom: 0 !important;
+    }
 
-        /* MES Tabelle kompakter */
-        div[data-testid="stDataFrame"] table {
-            font-size: 0.8rem;
-        }
+    section[data-testid="stSidebar"] .stButton button {
+        padding: 0.22rem 0.4rem;
+        font-size: 0.8rem;
+    }
 
-        div[data-testid="stDataFrame"] th,
-        div[data-testid="stDataFrame"] td {
-            padding: 2px 6px;
-        }
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] .stMarkdown,
+    section[data-testid="stSidebar"] .stSelectbox,
+    section[data-testid="stSidebar"] .stRadio,
+    section[data-testid="stSidebar"] .stToggle {
+        font-size: 0.9rem !important;
+    }
+
+    div[data-testid="stSlider"] {
+        transform: scale(0.93);
+        transform-origin: left;
+    }
+
+    .mes-card {
+        border: 1px solid #e6e9ef;
+        border-radius: 10px;
+        padding: 0.35rem 0.55rem;
+        background: white;
+    }
+
+    .mes-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.08rem 0;
+        font-size: 0.84rem;
+    }
+
+    .mes-label {
+        color: #1f2937;
+    }
+
+    .mes-value {
+        color: #111827;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        min-width: 58px;
+    }
+
+    .mes-divider {
+        border-top: 1px solid #e6e9ef;
+        margin: 0.18rem 0 0.08rem 0;
+    }
+
+    .mes-total {
+        font-weight: 700;
+        padding-top: 0.2rem;
+    }
+
+    .mes-official {
+        color: #374151;
+        font-size: 0.82rem;
+    }
 
     </style>
     """,
@@ -364,7 +427,13 @@ def metric_config() -> Dict[str, Dict[str, str]]:
     }
 
 
-def make_metric_figure(df: pd.DataFrame, metric_name: str, current_x: float, x_mode: str = "timestamp_sec") -> go.Figure:
+def make_metric_figure(
+    df: pd.DataFrame,
+    metric_name: str,
+    current_x: float,
+    x_mode: str = "timestamp_sec",
+    height: int = 150,
+) -> go.Figure:
     cfg = metric_config().get(metric_name, {"label": metric_name, "y": "Wert"})
     fig = go.Figure()
 
@@ -378,10 +447,10 @@ def make_metric_figure(df: pd.DataFrame, metric_name: str, current_x: float, x_m
         )
     )
     fig.add_vline(x=current_x, line_width=3, line_dash="dash", line_color="red")
-    
+
     fig.update_layout(
-        margin=dict(l=8, r=8, t=28, b=8),
-        height=230,
+        margin=dict(l=8, r=8, t=40, b=8),
+        height=height,
         title=cfg["label"],
         xaxis_title="Zeit (s)" if x_mode == "timestamp_sec" else "Frame",
         yaxis_title=cfg["y"],
@@ -429,18 +498,18 @@ def make_scatter_figure(scatter_df: pd.DataFrame, selected_key: str) -> go.Figur
                 ),
             )
         )
+
     def add_regression(df: pd.DataFrame, color: str, label: str):
-    
         reg_df = df.dropna(subset=["official_score", "MES_60"]).copy()
-    
+
         if len(reg_df) < 2:
             return None
-    
+
         x = reg_df["official_score"].to_numpy(dtype=float)
         y = reg_df["MES_60"].to_numpy(dtype=float)
-    
+
         m, b = np.polyfit(x, y, 1)
-    
+
         x_line = np.linspace(reg_df["official_score"].min(), reg_df["official_score"].max(), 100)
         y_line = m * x_line + b
 
@@ -497,22 +566,25 @@ def make_scatter_figure(scatter_df: pd.DataFrame, selected_key: str) -> go.Figur
         xaxis_title="Offizieller Score",
         yaxis_title="MES_60",
         margin=dict(l=8, r=8, t=36, b=8),
-        height=360,
+        height=260,
         legend=dict(
-                orientation="v",   
-                y=0.5,
-                yanchor="middle",
-                x=1.02,           
-                xanchor="left")
+            orientation="v",
+            y=0.5,
+            yanchor="middle",
+            x=1.02,
+            xanchor="left",
+        ),
     )
-    y_min = base_df["MES_60"].min()
-    y_max = base_df["MES_60"].max()
-    fig.update_yaxes(range=[y_min - 0.5, y_max + 0.5], autorange=False)
+
+    if not base_df.empty:
+        y_min = base_df["MES_60"].min()
+        y_max = base_df["MES_60"].max()
+        fig.update_yaxes(range=[y_min - 0.5, y_max + 0.5], autorange=False)
+
     return fig
 
 
 def make_radar_figure(summary: Dict[str, float]) -> go.Figure:
-
     labels = ["R", "Y", "S", "M", "C", "L"]
 
     label_names = {
@@ -551,15 +623,16 @@ def make_radar_figure(summary: Dict[str, float]) -> go.Figure:
         polar=dict(radialaxis=dict(visible=True, range=[0, 10])),
         showlegend=False,
         margin=dict(l=5, r=5, t=5, b=5),
-        height=260,
+        height=220,
     )
 
     return fig
 
+
 # ------------------------------------------------------------
 # UI
 # ------------------------------------------------------------
-st.title("Moguls Elegance Score Dashboard")
+st.markdown("## Moguls Elegance Score Dashboard")
 
 scores_df = load_scores()
 poses_df = load_poses()
@@ -569,8 +642,6 @@ videos_df = discover_video_files(VIDEO_DIR)
 run_index = build_run_index(scores_df, poses_df, videos_df)
 scatter_df = build_scatter_df(scores_df, fis_df)
 
-
-
 with st.sidebar:
     st.header("Steuerung")
 
@@ -578,7 +649,7 @@ with st.sidebar:
         st.error("Keine Daten gefunden. Lege all_poses.csv und mes_scores.csv unter ./daten ab.")
         st.stop()
 
-    st.info("zusätziche Auswahl: Analysedaten Subsequent / YOLOv8")    
+    st.info("zusätziche Auswahl: Analysedaten Subsequent / YOLOv8")
     selected_label = st.selectbox("Videosequenz", run_index["label"].tolist())
     selected_row = run_index[run_index["label"] == selected_label].iloc[0]
     selected_key = selected_row["video_key"]
@@ -591,21 +662,54 @@ with st.sidebar:
         st.stop()
 
     ts_df = compute_plot_timeseries(pose_subset)
-
-    view_mode = st.radio(
-        "Anzeige",
-        ["Video", "Frame"],
-        horizontal=True,
-    )
-
     max_index = max(len(ts_df) - 1, 0)
-    current_idx = st.slider(
-        "Frame",
-        min_value=0,
-        max_value=max_index,
-        value=min(60, max_index),
-        step=1,
-    )
+
+    if "current_idx" not in st.session_state:
+        st.session_state.current_idx = min(0, max_index)
+    if "last_video_key" not in st.session_state:
+        st.session_state.last_video_key = selected_key
+    if "frame_mode" not in st.session_state:
+        st.session_state.frame_mode = False
+
+    if st.session_state.last_video_key != selected_key:
+        start_idx = min(0, max_index)
+        st.session_state.current_idx = start_idx
+        st.session_state.frame_slider = start_idx
+        st.session_state.last_video_key = selected_key
+        st.session_state.frame_mode = False
+
+    if st.session_state.current_idx > max_index:
+        st.session_state.current_idx = max_index
+
+    st.toggle("Einzelbilder", key="frame_mode")
+    
+    if "frame_slider" not in st.session_state:
+        st.session_state.frame_slider = st.session_state.current_idx
+    
+    if st.session_state.frame_mode:
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            if st.button("◀ -1", use_container_width=True):
+                st.session_state.current_idx = max(0, st.session_state.current_idx - 1)
+                st.session_state.frame_slider = st.session_state.current_idx
+        with c2:
+            if st.button("↺", use_container_width=True):
+                st.session_state.current_idx = 0
+                st.session_state.frame_slider = 0
+        with c3:
+            if st.button("+1 ▶", use_container_width=True):
+                st.session_state.current_idx = min(max_index, st.session_state.current_idx + 1)
+                st.session_state.frame_slider = st.session_state.current_idx
+    
+        st.slider(
+            "Frame",
+            min_value=0,
+            max_value=max_index,
+            step=1,
+            key="frame_slider",
+        )
+    
+        st.session_state.current_idx = st.session_state.frame_slider
 
     x_mode = st.radio(
         "X-Achse",
@@ -633,22 +737,28 @@ with st.sidebar:
     st.markdown("### Info")
     st.info("folgt von Simon")
 
+current_idx = min(st.session_state.current_idx, max_index)
 current_row = ts_df.iloc[current_idx]
-current_x = float(current_row[x_mode])
+
+# rote Linie nur im Einzelbildmodus synchronisieren
+if st.session_state.frame_mode:
+    current_x = float(current_row[x_mode])
+else:
+    current_x = 0
+
 
 # ------------------------------------------------------------
-# Layout: links Video/Frame + Radar/MES, rechts Metriken + Scatter
+# Layout: stabiles Raster
 # ------------------------------------------------------------
-left_col, right_col = st.columns([1.15, 1.0], gap="small")
+top_left, top_right = st.columns([0.9, 1.1], gap="medium")
 
-with left_col:
-    st.markdown(f"### {view_mode}")
+with top_left:
     video_path = selected_row["video_path"]
 
-    if video_path and Path(video_path).exists():
-        if view_mode == "Video":
-            st.video(str(video_path))
-        else:
+    if st.session_state.frame_mode:
+        st.markdown("### Einzelbild")
+
+        if video_path and Path(video_path).exists():
             frame_number = int(ts_df.iloc[current_idx]["frame"])
             frame_img = get_video_frame(video_path, frame_number)
 
@@ -660,10 +770,29 @@ with left_col:
                 )
             else:
                 st.warning(f"Frame {frame_number} konnte nicht geladen werden.")
-    else:
-        st.info("Kein passendes Video im Video-Ordner gefunden.")
+        else:
+            st.info("Kein passendes Video im Video-Ordner gefunden.")
 
-    radar_col, mes_col = st.columns([1, 1], gap="small")
+    else:
+        st.markdown("### Wiedergabe")
+
+        if video_path and Path(video_path).exists():
+            st.video(str(video_path))
+        else:
+            st.info("Kein passendes Video im Video-Ordner gefunden.")
+
+with top_right:
+    st.markdown("### Metriken")
+    fig1 = make_metric_figure(ts_df, metric_1, current_x=current_x, x_mode=x_mode, height=120)
+    fig2 = make_metric_figure(ts_df, metric_2, current_x=current_x, x_mode=x_mode, height=120)
+
+    st.plotly_chart(fig1, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+
+bottom_left, bottom_right = st.columns([0.9, 1.1], gap="medium")
+
+with bottom_left:
+    radar_col, mes_col = st.columns([1, 1.25], gap="medium")
 
     with radar_col:
         st.markdown("### Radar")
@@ -673,60 +802,53 @@ with left_col:
             config={"displayModeBar": False},
         )
 
-    with mes_col:
-        st.markdown("### MES")
+with mes_col:
+    st.markdown("### MES")
 
-        score_rows = pd.DataFrame(
-            {
-                "Metrik": [
-                    "Rhythmus",
-                    "Symmetrie",
-                    "Stabilität",
-                    "Smoothness",
-                    "Kompaktheit",
-                    "Line Integrity",
-                    "Total",
-                ],
-                "MES": [
-                    summary.get("R", np.nan) * 10 if pd.notna(summary.get("R", np.nan)) else np.nan,
-                    summary.get("Y", np.nan) * 10 if pd.notna(summary.get("Y", np.nan)) else np.nan,
-                    summary.get("S", np.nan) * 10 if pd.notna(summary.get("S", np.nan)) else np.nan,
-                    summary.get("M", np.nan) * 10 if pd.notna(summary.get("M", np.nan)) else np.nan,
-                    summary.get("C", np.nan) * 10 if pd.notna(summary.get("C", np.nan)) else np.nan,
-                    summary.get("L", np.nan) * 10 if pd.notna(summary.get("L", np.nan)) else np.nan,
-                    summary.get("MES_60", np.nan),
-                ],
-                "Offizieller Score": [
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    summary.get("official_score", np.nan),
-                ],
-            }
+    mes_items = [
+        ("Rhythmus", summary.get("R", np.nan) * 10 if pd.notna(summary.get("R", np.nan)) else np.nan),
+        ("Symmetrie", summary.get("Y", np.nan) * 10 if pd.notna(summary.get("Y", np.nan)) else np.nan),
+        ("Stabilität", summary.get("S", np.nan) * 10 if pd.notna(summary.get("S", np.nan)) else np.nan),
+        ("Smoothness", summary.get("M", np.nan) * 10 if pd.notna(summary.get("M", np.nan)) else np.nan),
+        ("Kompaktheit", summary.get("C", np.nan) * 10 if pd.notna(summary.get("C", np.nan)) else np.nan),
+        ("Line Integrity", summary.get("L", np.nan) * 10 if pd.notna(summary.get("L", np.nan)) else np.nan),
+    ]
+
+    total_mes = summary.get("MES_60", np.nan)
+    official_score = summary.get("official_score", np.nan)
+
+    rows_html = ""
+    for label, value in mes_items:
+        value_str = f"{value:.3f}" if pd.notna(value) else "–"
+        rows_html += (
+            f'<div class="mes-row">'
+            f'<span class="mes-label">{label}</span>'
+            f'<span class="mes-value">{value_str}</span>'
+            f'</div>'
         )
 
-        st.dataframe(score_rows, use_container_width=True, hide_index=True, height=280)
+    total_str = f"{total_mes:.3f}" if pd.notna(total_mes) else "–"
+    official_str = f"{official_score:.1f}" if pd.notna(official_score) else "–"
 
-with right_col:
-    st.markdown("### Metriken")
-    fig1 = make_metric_figure(ts_df, metric_1, current_x=current_x, x_mode=x_mode)
-    fig2 = make_metric_figure(ts_df, metric_2, current_x=current_x, x_mode=x_mode)
+    mes_html = textwrap.dedent(f"""
+    <div class="mes-card">
+        {rows_html}
+        <div class="mes-divider"></div>
+        <div class="mes-row mes-total">
+            <span class="mes-label">Total</span>
+            <span class="mes-value">{total_str}</span>
+        </div>
+        <div class="mes-row mes-official">
+            <span class="mes-label">Offizieller Score</span>
+            <span class="mes-value">{official_str}</span>
+        </div>
+    </div>
+    """)
 
-    st.plotly_chart(fig1, use_container_width=True, config={"displayModeBar": False})
-    st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
-
+    st.markdown(mes_html, unsafe_allow_html=True)
+    
+with bottom_right:
+    st.markdown("### Score")
     scatter_fig = make_scatter_figure(scatter_df, selected_key=selected_key)
     st.plotly_chart(scatter_fig, use_container_width=True, config={"displayModeBar": False})
 
-# with st.expander("Debug / geladene Daten"):
-#     st.write("App-Verzeichnis:", str(APP_DIR))
-#     st.write("Pose-Datei gefunden:", POSES_PATH.exists())
-#     st.write("Score-Datei gefunden:", SCORES_PATH.exists())
-#     st.write("Video-Ordner gefunden:", VIDEO_DIR.exists())
-#     st.write("Ausgewählte Sequenz:", selected_label)
-#     st.write("Frames Pose-Daten:", len(pose_subset))
-#     st.dataframe(ts_df.head(), use_container_width=True)
-    
