@@ -368,17 +368,18 @@ def load_fis_scores() -> pd.DataFrame:
 
 def parse_video_meta(video_name: str) -> dict:
     name = str(video_name)
+    norm = normalize_name(name)
 
     gender = None
-    if "Frauen" in name:
+    if "frauen" in norm:
         gender = "W"
-    elif "Männer" in name or "Maenner" in name or "Manner" in normalize_name(name):
+    elif "manner" in norm or "maenner" in norm:
         gender = "M"
 
-    comp_match = re.search(r"Final[_ ]?(\d)", name)
+    comp_match = re.search(r"final[_ ]?(\d)", norm)
     competition = f"Final {comp_match.group(1)}" if comp_match else None
 
-    bib_match = re.search(r"_(\d{2})$", name)
+    bib_match = re.search(r"_(\d{1,3})$", norm)
     bib = int(bib_match.group(1)) if bib_match else None
 
     return {
