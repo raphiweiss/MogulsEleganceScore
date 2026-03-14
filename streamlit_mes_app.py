@@ -12,6 +12,7 @@ import streamlit as st
 import cv2
 import textwrap
 
+from plotly.subplots import make_subplots
 
 # ------------------------------------------------------------
 # Konfiguration
@@ -181,41 +182,89 @@ def compute_plot_timeseries(poses_df: pd.DataFrame, fps: int = DEFAULT_FPS) -> p
     left_ankle_y = safe_series(df, "left_ankle_y")
     right_ankle_y = safe_series(df, "right_ankle_y")
 
+    #Rhythmus
     hip_cx = (left_hip_x + right_hip_x) / 2
     hip_cx_smooth = moving_average(hip_cx, window=7)
+    
+    # Symmetrie 1 (rolling)
+    symmetrie = rolling_symmetrie_from_hip_cx(hip_cx_smooth, window=15)
 
+    # # Symmetrie 2 (Links/Rechts-Auslenkung relativ zum globalen Zentrum)
+    center = hip_cx_smooth.median()
+    hip_dx = hip_cx_smooth - center
+    sym_left = hip_dx.clip(upper=0)    # negativ = links
+    sym_right = hip_dx.clip(lower=0)   # positiv = rechts
+
+    #Stabilität
     shoulder_dx = right_shoulder_x - left_shoulder_x
     shoulder_dy = right_shoulder_y - left_shoulder_y
     theta = np.degrees(np.arctan2(shoulder_dy, shoulder_dx.abs() + 1e-6))
 
+    #Smoothness
     jerk = hip_cx_smooth.diff().diff().diff().abs().fillna(0)
 
+    #Kompaktheit
     d_leg = np.sqrt((left_knee_x - right_knee_x) ** 2 + (left_knee_y - right_knee_y) ** 2)
     hip_width = np.sqrt((left_hip_x - right_hip_x) ** 2 + (left_hip_y - right_hip_y) ** 2)
     d_norm = d_leg / (hip_width.replace(0, np.nan))
 
+    #Line Integrity
     ankle_dx = right_ankle_x - left_ankle_x
     ankle_dy = right_ankle_y - left_ankle_y
     phi = np.degrees(np.arctan2(ankle_dy.abs(), ankle_dx.abs() + 1e-6))
 
-    center = hip_cx_smooth.median()
-    left_amp = (hip_cx_smooth - center).clip(lower=0)
-    right_amp = (center - hip_cx_smooth).clip(lower=0)
-    symmetrie = 1 - (left_amp - right_amp).abs() / (left_amp + right_amp + 1e-6)
-    symmetrie = symmetrie.clip(lower=0, upper=1)
+
 
     return pd.DataFrame(
-        {
-            "frame": frame,
-            "timestamp_sec": frame / fps,
-            "rhythmus": hip_cx_smooth,
-            "stabilitaet": theta,
-            "smoothness": jerk,
-            "kompaktheit": d_norm,
-            "line_integrity": phi,
-            "symmetrie": symmetrie,
-        }
-    )
+            {
+                "frame": frame,
+                "timestamp_sec": frame / fps,
+                "rhythmus": hip_cx_smooth,
+                "symmetrie": symmetrie,
+                "sym_left": sym_left,
+                "sym_right": sym_right,
+                "sym_dx": hip_dx,
+                "stabilitaet": theta,
+                "smoothness": jerk,
+                "kompaktheit": d_norm,
+                "line_integrity": phi,
+            }
+        )
+
+
+def rolling_symmetrie_from_hip_cx(hip_cx: pd.Series, window: int = 15) -> pd.Series:
+    """
+    Rolling-Symmetrie-Score aus der Hüftmittelpunkt-Zeitreihe.
+    Gibt pro Frame einen Wert zwischen 0 und 1 zurück.
+    """
+    hip_cx = pd.Series(hip_cx).astype(float)
+    Y = np.full(len(hip_cx), np.nan)
+
+    for i in range(len(hip_cx)):
+        start = max(0, i - window + 1)
+        seg = hip_cx.iloc[start:i + 1]
+
+        seg = seg.dropna()
+        if len(seg) < 5:
+            continue
+
+        seg = seg - seg.median()
+
+        left_vals = np.abs(seg[seg < 0])
+        right_vals = seg[seg > 0]
+
+        L_amp = float(np.median(left_vals)) if len(left_vals) > 0 else 0.0
+        R_amp = float(np.median(right_vals)) if len(right_vals) > 0 else 0.0
+
+        total = L_amp + R_amp
+        if total < 1e-6:
+            y = 1.0
+        else:
+            y = float(np.clip(1 - abs(L_amp - R_amp) / total, 0, 1))
+
+        Y[i] = y
+
+    return pd.Series(Y, index=hip_cx.index)
 
 
 # ------------------------------------------------------------
@@ -431,21 +480,29 @@ def make_metric_figure(
     metric_name: str,
     current_x: float,
     x_mode: str = "timestamp_sec",
-    height: int = 150,
+    height: int = 220,
 ) -> go.Figure:
     cfg = metric_config().get(metric_name, {"label": metric_name, "y": "Wert"})
+    x = df[x_mode]
+
     fig = go.Figure()
 
     fig.add_trace(
         go.Scatter(
-            x=df[x_mode],
+            x=x,
             y=df[metric_name],
             mode="lines",
             name=cfg["label"],
             line=dict(width=2),
         )
     )
-    fig.add_vline(x=current_x, line_width=3, line_dash="dash", line_color="red")
+
+    fig.add_vline(
+        x=current_x,
+        line_width=3,
+        line_dash="dash",
+        line_color="red",
+    )
 
     fig.update_layout(
         margin=dict(l=8, r=8, t=40, b=8),
@@ -455,6 +512,10 @@ def make_metric_figure(
         yaxis_title=cfg["y"],
         showlegend=False,
     )
+
+    if metric_name == "symmetrie":
+        fig.update_yaxes(range=[0, 1])
+
     return fig
 
 
