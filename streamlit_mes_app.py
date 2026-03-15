@@ -232,7 +232,7 @@ def compute_plot_timeseries(poses_df: pd.DataFrame, fps: int = DEFAULT_FPS) -> p
         )
 
 
-def rolling_symmetrie_from_hip_cx(hip_cx: pd.Series, window: int = 15) -> pd.Series:
+def rolling_symmetrie_from_hip_cx(hip_cx: pd.Series, window: int = 30) -> pd.Series:
     """
     Rolling-Symmetrie-Score aus der Hüftmittelpunkt-Zeitreihe.
     Gibt pro Frame einen Wert zwischen 0 und 1 zurück.
