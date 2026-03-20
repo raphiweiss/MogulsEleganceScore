@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import base64
-import json
 import re
 import textwrap
 import unicodedata
@@ -13,7 +11,6 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-import streamlit.components.v1 as components
 from scipy.signal import savgol_filter
 
 
@@ -65,32 +62,27 @@ COMPONENT_MAP = {label: key for label, key in MES_COMPONENTS}
 st.markdown(
     """
     <style>
-    
-    section[data-testid="stSidebar"] .block-container {
-        padding-top: 0 !important;
-    }
-    
     section[data-testid="stSidebar"] {
-        min-width: 270px;
+        min-width: 280px;
     }
 
     .block-container {
-        padding-top: 2rem !important;
-        padding-bottom: 0.2rem !important;
-        padding-left: 1.8rem !important;
-        padding-right: 1.8rem !important;
+        padding-top: 2.8rem !important;
+        padding-bottom: 0.25rem;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
         max-width: 100%;
     }
 
     section[data-testid="stSidebar"] .block-container {
-        padding-top: 0rem !important;
-        padding-bottom: 0.2rem !important;
+        padding-top: 1.2rem !important;
+        padding-bottom: 0.25rem !important;
     }
 
     h1, h2, h3, h4 {
         line-height: 1.2 !important;
         margin-top: 0 !important;
-        margin-bottom: 0.3rem !important;
+        margin-bottom: 0.35rem !important;
         white-space: normal !important;
         overflow-wrap: break-word !important;
         word-break: break-word !important;
@@ -100,55 +92,65 @@ st.markdown(
         margin-bottom: 0 !important;
     }
 
+    section[data-testid="stSidebar"] .stButton button {
+        padding: 0.22rem 0.4rem;
+        font-size: 0.8rem;
+    }
+
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stMarkdown,
     section[data-testid="stSidebar"] .stSelectbox,
     section[data-testid="stSidebar"] .stRadio,
-    section[data-testid="stSidebar"] .stToggle,
-    section[data-testid="stSidebar"] .stMultiSelect {
-        font-size: 0.88rem !important;
+    section[data-testid="stSidebar"] .stToggle {
+        font-size: 0.9rem !important;
+    }
+
+    div[data-testid="stSlider"] {
+        transform: scale(0.93);
+        transform-origin: left;
     }
 
     .mes-card {
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 0.4rem 0.6rem;
+        border: 1px solid #e6e9ef;
+        border-radius: 10px;
+        padding: 0.35rem 0.55rem;
         background: white;
-        min-height: 220px;
+        min-height: 230px;
     }
 
     .mes-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.06rem 0;
-        font-size: 0.82rem;
+        gap: 0.5rem;
+        padding: 0.08rem 0;
+        font-size: 0.84rem;
     }
 
     .mes-label {
-        color: #374151;
+        color: #1f2937;
     }
 
     .mes-value {
         color: #111827;
         font-variant-numeric: tabular-nums;
-        font-weight: 500;
         text-align: right;
         min-width: 58px;
     }
 
     .mes-divider {
-        border-top: 1px solid #e5e7eb;
-        margin: 0.2rem 0 0.1rem 0;
+        border-top: 1px solid #e6e9ef;
+        margin: 0.18rem 0 0.08rem 0;
     }
 
     .mes-total {
         font-weight: 700;
+        padding-top: 0.2rem;
     }
 
     .mes-official {
-        color: #6b7280;
-        font-size: 0.8rem;
+        color: #374151;
+        font-size: 0.82rem;
     }
     </style>
     """,
@@ -215,20 +217,20 @@ def get_video_fps(video_path: Path | str) -> float:
     return fps if fps and fps > 0 else DEFAULT_FPS
 
 
-def encode_video_base64(video_path: Path | str) -> tuple[str | None, str | None]:
-    path = Path(video_path)
-    if not path.exists():
-        return None, None
+def get_video_frame(video_path: Path | str, frame_idx: int):
+    cap = cv2.VideoCapture(str(video_path))
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    mime_map = {
-        ".mp4": "video/mp4",
-        ".mov": "video/quicktime",
-        ".webm": "video/webm",
-        ".m4v": "video/mp4",
-    }
-    mime_type = mime_map.get(path.suffix.lower(), "video/mp4")
-    data = base64.b64encode(path.read_bytes()).decode("utf-8")
-    return data, mime_type
+    frame_idx = max(0, min(frame_idx, total_frames - 1))
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+
+    ok, frame = cap.read()
+    cap.release()
+
+    if not ok:
+        return None
+
+    return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 
 @st.cache_data
@@ -375,6 +377,10 @@ def compute_plot_timeseries(poses_df: pd.DataFrame, fps: float = DEFAULT_FPS) ->
     hip_cx_smooth = moving_average(hip_cx, window=7)
 
     symmetrie = rolling_symmetry_from_hip_center(hip_cx_smooth, window=15)
+    center = hip_cx_smooth.median()
+    hip_dx = hip_cx_smooth - center
+    sym_left = hip_dx.clip(upper=0)
+    sym_right = hip_dx.clip(lower=0)
 
     shoulder_dx = right_shoulder_x - left_shoulder_x
     shoulder_dy = right_shoulder_y - left_shoulder_y
@@ -402,6 +408,9 @@ def compute_plot_timeseries(poses_df: pd.DataFrame, fps: float = DEFAULT_FPS) ->
             "timestamp_sec": frame / fps,
             "rhythmus": hip_cx_smooth,
             "symmetrie": symmetrie,
+            "sym_left": sym_left,
+            "sym_right": sym_right,
+            "sym_dx": hip_dx,
             "stabilitaet": theta,
             "smoothness": jerk,
             "kompaktheit": kompaktheit,
@@ -420,6 +429,7 @@ def parse_video_meta(video_name: str) -> dict[str, Any]:
         gender = "M"
 
     match = re.search(r"final_(\d)_(\d{1,3})(?:_hd)?$", norm)
+
     competition = f"Final {match.group(1)}" if match else None
     bib = int(match.group(2)) if match else None
 
@@ -450,6 +460,8 @@ def build_run_index(scores_df: pd.DataFrame, poses_df: pd.DataFrame, videos_df: 
             {
                 "video_key": key,
                 "label": make_display_label(raw_label),
+                "has_scores": not score_match.empty,
+                "has_poses": not pose_match.empty,
                 "video_path": None if video_match.empty else video_match["video_path"].iloc[0],
             }
         )
@@ -524,6 +536,44 @@ def get_pose_subset(poses_df: pd.DataFrame, video_key: str) -> pd.DataFrame:
 # ============================================================
 # Plot-Helfer
 # ============================================================
+def make_metric_figure(
+    df: pd.DataFrame,
+    metric_name: str,
+    current_x: float,
+    x_mode: str = "timestamp_sec",
+    height: int = 220,
+    line_color: str | None = None,
+) -> go.Figure:
+    cfg = METRICS.get(metric_name, {"label": metric_name, "y": "Wert"})
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=df[x_mode],
+            y=df[metric_name],
+            mode="lines",
+            name=cfg["label"],
+            line=dict(width=2, color=line_color) if line_color else dict(width=2),
+        )
+    )
+
+    fig.add_vline(x=current_x, line_width=3, line_dash="dash", line_color="red")
+
+    fig.update_layout(
+        title=cfg["label"],
+        xaxis_title="Zeit (s)" if x_mode == "timestamp_sec" else "Frame",
+        yaxis_title=cfg["y"],
+        margin=dict(l=8, r=8, t=40, b=8),
+        height=height,
+        showlegend=False,
+    )
+
+    if metric_name == "symmetrie":
+        fig.update_yaxes(range=[0, 1])
+
+    return fig
+
+
 def remove_outliers_iqr(df: pd.DataFrame, col: str, factor: float = 1.5) -> pd.DataFrame:
     if df.empty or col not in df.columns:
         return df
@@ -687,8 +737,8 @@ def make_scatter_figure(
         title=title,
         xaxis_title="Offizieller Score",
         yaxis_title=y_axis_label,
-        margin=dict(l=4, r=8, t=36, b=8),
-        height=230,
+        margin=dict(l=8, r=8, t=36, b=8),
+        height=245,
         legend=dict(
             orientation="v",
             y=0.5,
@@ -752,313 +802,29 @@ def make_radar_figure(summary: dict[str, Any], color: str | None = None) -> go.F
         polar=dict(radialaxis=dict(visible=True, range=[0, 10])),
         showlegend=False,
         margin=dict(l=20, r=20, t=20, b=20),
-        height=220,
+        height=240,
     )
 
     return fig
 
 
 # ============================================================
-# HTML-Komponente für Video + synchrone Marker + Klick-Sync
+# Session State
 # ============================================================
-def build_synced_metric_html(
-    video_path: Path | str,
-    ts_df: pd.DataFrame,
-    metric_1: str,
-    metric_2: str,
-    selected_color: str,
-    x_mode: str = "timestamp_sec",
-) -> str:
-    video_b64, mime_type = encode_video_base64(video_path)
-    if not video_b64 or not mime_type:
-        return "<p>Video konnte nicht geladen werden.</p>"
+def init_session_state(selected_key: str, max_index: int) -> None:
+    st.session_state.setdefault("current_idx", 0)
+    st.session_state.setdefault("last_video_key", selected_key)
+    st.session_state.setdefault("frame_mode", False)
+    st.session_state.setdefault("frame_slider", 0)
 
-    metric_cfg_1 = METRICS.get(metric_1, {"label": metric_1, "y": "Wert"})
-    metric_cfg_2 = METRICS.get(metric_2, {"label": metric_2, "y": "Wert"})
+    if st.session_state.last_video_key != selected_key:
+        st.session_state.current_idx = 0
+        st.session_state.frame_slider = 0
+        st.session_state.last_video_key = selected_key
+        st.session_state.frame_mode = False
 
-    x_values = pd.to_numeric(ts_df[x_mode], errors="coerce").fillna(0).tolist()
-    y1 = pd.to_numeric(ts_df[metric_1], errors="coerce").fillna(0).tolist()
-    y2 = pd.to_numeric(ts_df[metric_2], errors="coerce").fillna(0).tolist()
-    frames = pd.to_numeric(ts_df["frame"], errors="coerce").fillna(0).astype(int).tolist()
-    times = pd.to_numeric(ts_df["timestamp_sec"], errors="coerce").fillna(0).tolist()
+    st.session_state.current_idx = min(st.session_state.current_idx, max_index)
 
-    initial_x = 0.0 if x_mode == "timestamp_sec" else 0
-    x_title = "Zeit (s)" if x_mode == "timestamp_sec" else "Frame"
-
-    payload = {
-        "mime_type": mime_type,
-        "video_b64": video_b64,
-        "x_values": x_values,
-        "y1": y1,
-        "y2": y2,
-        "frames": frames,
-        "times": times,
-        "metric_1": metric_1,
-        "metric_2": metric_2,
-        "metric_label_1": metric_cfg_1["label"],
-        "metric_label_2": metric_cfg_2["label"],
-        "metric_y_1": metric_cfg_1["y"],
-        "metric_y_2": metric_cfg_2["y"],
-        "selected_color": selected_color,
-        "x_mode": x_mode,
-        "x_title": x_title,
-        "initial_x": initial_x,
-    }
-
-    return f"""
-    <div id="mes-layout" style="
-        display:grid;
-        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-        gap:24px;
-        align-items:start;
-        font-family:Inter, ui-sans-serif, system-ui, sans-serif;
-        width:100%;
-    ">
-      <div style="min-width:0;">
-        <video
-          id="mes-video"
-          controls
-          style="
-            width:100%;
-            height:280px;
-            object-fit:cover;
-            border-radius:12px;
-            display:block;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-          "
-        >
-          <source src="data:{mime_type};base64,{video_b64}" type="{mime_type}">
-        </video>
-
-        <div id="mes-readout" style="margin-top:4px; font-size:12px; color:#6b7280;">
-          t = 0.00 s | Frame = 0
-        </div>
-      </div>
-
-      <div id="metrics-layout" style="min-width:0;">
-        <div id="chart1" style="width:100%; height:140px;"></div>
-        <div id="chart2" style="width:100%; height:140px; margin-top:10px;"></div>
-      </div>
-    </div>
-
-    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-    <script>
-      const data = {json.dumps(payload)};
-      const video = document.getElementById("mes-video");
-      const readout = document.getElementById("mes-readout");
-      const chart1 = document.getElementById("chart1");
-      const chart2 = document.getElementById("chart2");
-      const layoutWrapper = document.getElementById("mes-layout");
-
-      const markerShape = {{
-        type: "line",
-        x0: data.initial_x,
-        x1: data.initial_x,
-        y0: 0,
-        y1: 1,
-        yref: "paper",
-        line: {{
-          color: "#ef4444",
-          width: 2,
-          dash: "dot"
-        }}
-      }};
-
-      function buildLayout(title, yTitle) {{
-        return {{
-          margin: {{ l: 20, r: 6, t: 44, b: 42 }},
-          title: {{
-            text: "<b>" + title + "</b>",
-            x: 0.01,
-            xanchor: "left",
-            y: 0.98,
-            yanchor: "top",
-            font: {{
-              size: 14,
-              color: "#111827"
-            }}
-          }},
-          xaxis: {{
-            title: {{
-              text: data.x_title,
-              standoff: 8,
-              font: {{ size: 10 }}
-            }},
-            tickfont: {{ size: 10 }},
-            automargin: true
-          }},
-          yaxis: {{
-            title: {{
-              text: yTitle,
-              standoff: 6,
-              font: {{ size: 10 }}
-            }},
-            tickfont: {{ size: 10 }},
-            automargin: true
-          }},
-          shapes: [{{ ...markerShape }}],
-          showlegend: false,
-          plot_bgcolor: "white",
-          paper_bgcolor: "white",
-          hovermode: "x"
-        }};
-      }}
-
-      function nearestFrameIndex(currentTime) {{
-        if (!data.times.length) return 0;
-
-        let bestIdx = 0;
-        let bestDiff = Math.abs(data.times[0] - currentTime);
-
-        for (let i = 1; i < data.times.length; i++) {{
-          const diff = Math.abs(data.times[i] - currentTime);
-          if (diff < bestDiff) {{
-            bestDiff = diff;
-            bestIdx = i;
-          }}
-        }}
-        return bestIdx;
-      }}
-
-      function markerXFromVideoTime(currentTime) {{
-        if (data.x_mode === "timestamp_sec") {{
-          return currentTime;
-        }}
-        const idx = nearestFrameIndex(currentTime);
-        return data.frames[idx] ?? 0;
-      }}
-
-      function timeFromChartX(xVal) {{
-        if (data.x_mode === "timestamp_sec") {{
-          return Math.max(0, Number(xVal) || 0);
-        }}
-
-        if (!data.frames.length || !data.times.length) return 0;
-
-        let bestIdx = 0;
-        let bestDiff = Math.abs(data.frames[0] - xVal);
-
-        for (let i = 1; i < data.frames.length; i++) {{
-          const diff = Math.abs(data.frames[i] - xVal);
-          if (diff < bestDiff) {{
-            bestDiff = diff;
-            bestIdx = i;
-          }}
-        }}
-        return data.times[bestIdx] ?? 0;
-      }}
-
-      function updateMarker() {{
-        if (!video) return;
-
-        const t = video.currentTime || 0;
-        const idx = nearestFrameIndex(t);
-        const frame = data.frames[idx] ?? 0;
-        const markerX = markerXFromVideoTime(t);
-
-        if (readout) {{
-          readout.textContent = `t = ${{t.toFixed(2)}} s | Frame = ${{frame}}`;
-        }}
-
-        Plotly.relayout(chart1, {{
-          "shapes[0].x0": markerX,
-          "shapes[0].x1": markerX
-        }});
-
-        Plotly.relayout(chart2, {{
-          "shapes[0].x0": markerX,
-          "shapes[0].x1": markerX
-        }});
-      }}
-
-      function seekVideoFromClick(eventData) {{
-        if (!video || !eventData || !eventData.points || !eventData.points.length) return;
-
-        const clickedX = eventData.points[0].x;
-        const targetTime = timeFromChartX(clickedX);
-
-        video.currentTime = targetTime;
-        updateMarker();
-
-        if (!video.paused) {{
-          const playPromise = video.play();
-          if (playPromise !== undefined) {{
-            playPromise.catch(() => null);
-          }}
-        }}
-      }}
-
-      Plotly.newPlot(
-        chart1,
-        [{{
-          x: data.x_values,
-          y: data.y1,
-          type: "scatter",
-          mode: "lines",
-          line: {{ width: 2, color: data.selected_color }}
-        }}],
-        buildLayout(data.metric_label_1, data.metric_y_1),
-        {{ displayModeBar: false, responsive: true }}
-      ).then(() => updateMarker());
-
-      Plotly.newPlot(
-        chart2,
-        [{{
-          x: data.x_values,
-          y: data.y2,
-          type: "scatter",
-          mode: "lines",
-          line: {{ width: 2, color: data.selected_color }}
-        }}],
-        buildLayout(data.metric_label_2, data.metric_y_2),
-        {{ displayModeBar: false, responsive: true }}
-      ).then(() => updateMarker());
-
-      if (data.metric_1 === "symmetrie") {{
-        Plotly.relayout(chart1, {{ "yaxis.range": [0, 1] }});
-      }}
-      if (data.metric_2 === "symmetrie") {{
-        Plotly.relayout(chart2, {{ "yaxis.range": [0, 1] }});
-      }}
-
-      chart1.on("plotly_click", seekVideoFromClick);
-      chart2.on("plotly_click", seekVideoFromClick);
-
-      let rafId = null;
-
-      function loop() {{
-        updateMarker();
-        if (!video.paused && !video.ended) {{
-          rafId = requestAnimationFrame(loop);
-        }}
-      }}
-
-      video.addEventListener("play", () => {{
-        if (rafId) cancelAnimationFrame(rafId);
-        loop();
-      }});
-
-      video.addEventListener("pause", () => {{
-        updateMarker();
-        if (rafId) cancelAnimationFrame(rafId);
-      }});
-
-      video.addEventListener("seeked", updateMarker);
-      video.addEventListener("timeupdate", updateMarker);
-      video.addEventListener("loadedmetadata", updateMarker);
-
-      const resizeObserver = new ResizeObserver(() => {{
-        Plotly.Plots.resize(chart1);
-        Plotly.Plots.resize(chart2);
-      }});
-
-      if (layoutWrapper) {{
-        resizeObserver.observe(layoutWrapper);
-      }}
-
-      setTimeout(updateMarker, 100);
-    </script>
-    """
 
 # ============================================================
 # UI-Hilfsfunktionen
@@ -1135,7 +901,6 @@ with st.sidebar:
             color: white;
             padding:12px 16px;
             border-radius:12px;
-            margin-top:-15px;
             margin-bottom:16px;
         ">
             <div style="font-size:18px; font-weight:600; line-height:1.25;">
@@ -1143,13 +908,15 @@ with st.sidebar:
                 Demotool mit YOLOv8n
             </div>
             <div style="font-size:13px; opacity:0.8; margin-top:4px;">
-                Full HD (1920×1080)
+                Full HD (1920×1080) • 25.25 fps
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
+
     st.markdown("#### Videoanalyse")
+
     selected_label = st.selectbox("Sequenz", run_index["label"].tolist())
     selected_row = run_index.loc[run_index["label"] == selected_label].iloc[0]
     selected_key = selected_row["video_key"]
@@ -1164,6 +931,32 @@ with st.sidebar:
 
     fps = get_video_fps(selected_row["video_path"]) if selected_row["video_path"] else DEFAULT_FPS
     ts_df = compute_plot_timeseries(pose_subset, fps=fps)
+    max_index = max(len(ts_df) - 1, 0)
+
+    init_session_state(selected_key, max_index)
+
+    st.toggle("Einzelbilder", key="frame_mode")
+
+    if st.session_state.frame_mode:
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            if st.button("◀ -1", use_container_width=True):
+                st.session_state.current_idx = max(0, st.session_state.current_idx - 1)
+                st.session_state.frame_slider = st.session_state.current_idx
+
+        with c2:
+            if st.button("↺", use_container_width=True):
+                st.session_state.current_idx = 0
+                st.session_state.frame_slider = 0
+
+        with c3:
+            if st.button("+1 ▶", use_container_width=True):
+                st.session_state.current_idx = min(max_index, st.session_state.current_idx + 1)
+                st.session_state.frame_slider = st.session_state.current_idx
+
+        st.slider("Frame", 0, max_index, step=1, key="frame_slider")
+        st.session_state.current_idx = st.session_state.frame_slider
 
     x_mode = st.radio(
         "X-Achse",
@@ -1180,7 +973,6 @@ with st.sidebar:
         index=0,
         format_func=lambda x: METRICS[x]["label"],
     )
-
     metric_2 = st.selectbox(
         "Metrik 2",
         metric_options,
@@ -1206,37 +998,71 @@ with st.sidebar:
 
     regression_mode = "MES_60" if regression_mode_label == "MES Total" else "selected_sum"
 
+    st.markdown("#### Info")
+    st.info("folgt")
+
 
 # ============================================================
-# Hauptlayout oben
+# Abgeleitete UI-Werte
 # ============================================================
-header_left, header_right = st.columns([0.92, 1.08], gap="large")
+current_idx = min(st.session_state.current_idx, max_index)
+current_row = ts_df.iloc[current_idx]
+current_x = float(current_row[x_mode]) if st.session_state.frame_mode else 0
 
 
-with header_left:
-    st.markdown("#### Video")
-with header_right:
+# ============================================================
+# Hauptlayout
+# ============================================================
+top_left, top_right = st.columns([0.9, 1.1], gap="medium")
+
+with top_left:
+    video_path = selected_row["video_path"]
+
+    if st.session_state.frame_mode:
+        st.markdown("### Einzelbild")
+
+        if video_path and Path(video_path).exists():
+            frame_number = int(ts_df.iloc[current_idx]["frame"])
+            frame_img = get_video_frame(video_path, frame_number)
+
+            if frame_img is not None:
+                st.image(frame_img, use_container_width=True)
+                st.caption(f"Frame {frame_number} | t = {ts_df.iloc[current_idx]['timestamp_sec']:.2f} s")
+            else:
+                st.warning(f"Frame {frame_number} konnte nicht geladen werden.")
+        else:
+            st.info("Kein passendes Video im Video-Ordner gefunden.")
+    else:
+        st.markdown("#### Wiedergabe")
+        if video_path and Path(video_path).exists():
+            st.video(str(video_path))
+        else:
+            st.info("Kein passendes Video im Video-Ordner gefunden.")
+
+with top_right:
     st.markdown("#### Metriken")
 
-video_path = selected_row["video_path"]
-if video_path and Path(video_path).exists():
-    html = build_synced_metric_html(
-        video_path=video_path,
-        ts_df=ts_df,
-        metric_1=metric_1,
-        metric_2=metric_2,
-        selected_color=selected_color,
+    fig1 = make_metric_figure(
+        ts_df,
+        metric_1,
+        current_x=current_x,
         x_mode=x_mode,
+        height=120,
+        line_color=selected_color,
     )
-    components.html(html, height=315, scrolling=False)
-else:
-    st.info("Kein passendes Video im Video-Ordner gefunden.")
+    fig2 = make_metric_figure(
+        ts_df,
+        metric_2,
+        current_x=current_x,
+        x_mode=x_mode,
+        height=120,
+        line_color=selected_color,
+    )
 
+    st.plotly_chart(fig1, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
 
-# ============================================================
-# Hauptlayout unten
-# ============================================================
-bottom_left, bottom_right = st.columns([0.92, 1.08], gap="large")
+bottom_left, bottom_right = st.columns([0.9, 1.1], gap="medium")
 
 with bottom_left:
     radar_col, mes_col = st.columns([1.3, 0.9], gap="medium")

@@ -1,0 +1,342 @@
+{
+  "run_name": "2026-03-17_215731_v8n-pose_all_HD_conf20",
+  "timestamp": "2026-03-17 21:57:31",
+  "model": "yolov8n-pose.pt",
+  "video_dir": "videos/all_HD",
+  "conf": 0.2,
+  "max_det": 1,
+  "img_size": 1280,
+  "tracker": "bytetrack.yaml",
+  "device": "NVIDIA GeForce RTX 2060 SUPER",
+  "cuda_available": true,
+  "videos_processed": 54,
+  "total_frames": 6741,
+  "duration_seconds": 186.32,
+  "avg_fps": 36.2,
+  "per_video": [
+    {
+      "video": "Moguls_Frauen_Final_1_01_HD",
+      "frames": 85,
+      "duration_s": 3.1,
+      "fps": 27.4
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_02_HD",
+      "frames": 122,
+      "duration_s": 3.63,
+      "fps": 33.6
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_03_HD",
+      "frames": 135,
+      "duration_s": 3.86,
+      "fps": 34.9
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_04_HD",
+      "frames": 110,
+      "duration_s": 3.17,
+      "fps": 34.7
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_05_HD",
+      "frames": 95,
+      "duration_s": 2.83,
+      "fps": 33.6
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_06_HD",
+      "frames": 130,
+      "duration_s": 3.73,
+      "fps": 34.8
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_07_HD",
+      "frames": 115,
+      "duration_s": 3.33,
+      "fps": 34.5
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_08_HD",
+      "frames": 125,
+      "duration_s": 3.62,
+      "fps": 34.5
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_09_HD",
+      "frames": 352,
+      "duration_s": 9.59,
+      "fps": 36.7
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_10_HD",
+      "frames": 124,
+      "duration_s": 3.44,
+      "fps": 36.0
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_11_HD",
+      "frames": 90,
+      "duration_s": 2.52,
+      "fps": 35.7
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_12_HD",
+      "frames": 107,
+      "duration_s": 3.09,
+      "fps": 34.6
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_13_HD",
+      "frames": 105,
+      "duration_s": 2.94,
+      "fps": 35.7
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_14_HD",
+      "frames": 115,
+      "duration_s": 3.22,
+      "fps": 35.7
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_15_HD",
+      "frames": 330,
+      "duration_s": 8.88,
+      "fps": 37.2
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_17_HD",
+      "frames": 105,
+      "duration_s": 2.81,
+      "fps": 37.4
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_18_HD",
+      "frames": 179,
+      "duration_s": 4.72,
+      "fps": 37.9
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_20_HD",
+      "frames": 112,
+      "duration_s": 3.06,
+      "fps": 36.6
+    },
+    {
+      "video": "Moguls_Frauen_Final_1_23_HD",
+      "frames": 167,
+      "duration_s": 4.56,
+      "fps": 36.6
+    },
+    {
+      "video": "Moguls_Frauen_Final_2_01_HD",
+      "frames": 147,
+      "duration_s": 3.93,
+      "fps": 37.4
+    },
+    {
+      "video": "Moguls_Frauen_Final_2_04_HD",
+      "frames": 207,
+      "duration_s": 5.52,
+      "fps": 37.5
+    },
+    {
+      "video": "Moguls_Frauen_Final_2_06_HD",
+      "frames": 152,
+      "duration_s": 4.01,
+      "fps": 37.9
+    },
+    {
+      "video": "Moguls_Frauen_Final_2_07_HD",
+      "frames": 118,
+      "duration_s": 3.12,
+      "fps": 37.8
+    },
+    {
+      "video": "Moguls_Frauen_Final_2_08_HD",
+      "frames": 122,
+      "duration_s": 3.32,
+      "fps": 36.7
+    },
+    {
+      "video": "Moguls_Frauen_Final_2_09_HD",
+      "frames": 107,
+      "duration_s": 2.9,
+      "fps": 36.9
+    },
+    {
+      "video": "Moguls_Frauen_Final_2_11_HD",
+      "frames": 201,
+      "duration_s": 5.45,
+      "fps": 36.9
+    },
+    {
+      "video": "Moguls_Frauen_Final_2_12_HD",
+      "frames": 109,
+      "duration_s": 2.96,
+      "fps": 36.8
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_01_HD",
+      "frames": 65,
+      "duration_s": 1.79,
+      "fps": 36.2
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_02_HD",
+      "frames": 97,
+      "duration_s": 2.65,
+      "fps": 36.6
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_03_HD",
+      "frames": 105,
+      "duration_s": 2.88,
+      "fps": 36.5
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_04_HD",
+      "frames": 83,
+      "duration_s": 2.32,
+      "fps": 35.8
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_05_HD",
+      "frames": 97,
+      "duration_s": 2.65,
+      "fps": 36.6
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_06_HD",
+      "frames": 117,
+      "duration_s": 3.2,
+      "fps": 36.6
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_07_HD",
+      "frames": 61,
+      "duration_s": 1.71,
+      "fps": 35.6
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_08_HD",
+      "frames": 75,
+      "duration_s": 2.11,
+      "fps": 35.5
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_09_HD",
+      "frames": 140,
+      "duration_s": 4.04,
+      "fps": 34.6
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_10_HD",
+      "frames": 119,
+      "duration_s": 3.23,
+      "fps": 36.8
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_11_HD",
+      "frames": 102,
+      "duration_s": 2.83,
+      "fps": 36.0
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_12_HD",
+      "frames": 176,
+      "duration_s": 4.69,
+      "fps": 37.5
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_14_HD",
+      "frames": 184,
+      "duration_s": 5.03,
+      "fps": 36.6
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_15_HD",
+      "frames": 180,
+      "duration_s": 4.86,
+      "fps": 37.0
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_18_HD",
+      "frames": 103,
+      "duration_s": 2.83,
+      "fps": 36.4
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_19_HD",
+      "frames": 95,
+      "duration_s": 2.63,
+      "fps": 36.1
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_20_HD",
+      "frames": 68,
+      "duration_s": 1.94,
+      "fps": 35.0
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_22_HD",
+      "frames": 92,
+      "duration_s": 2.55,
+      "fps": 36.1
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_1_23_HD",
+      "frames": 77,
+      "duration_s": 2.18,
+      "fps": 35.3
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_2_01_HD",
+      "frames": 98,
+      "duration_s": 2.66,
+      "fps": 36.8
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_2_02_HD",
+      "frames": 117,
+      "duration_s": 3.16,
+      "fps": 37.0
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_2_03_HD",
+      "frames": 113,
+      "duration_s": 3.07,
+      "fps": 36.9
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_2_05_HD",
+      "frames": 75,
+      "duration_s": 2.05,
+      "fps": 36.6
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_2_06_HD",
+      "frames": 120,
+      "duration_s": 3.25,
+      "fps": 36.9
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_2_07_HD",
+      "frames": 87,
+      "duration_s": 2.45,
+      "fps": 35.5
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_2_08_HD",
+      "frames": 127,
+      "duration_s": 3.43,
+      "fps": 37.0
+    },
+    {
+      "video": "Moguls_M\u00e4nner_Final_2_19_HD",
+      "frames": 102,
+      "duration_s": 2.78,
+      "fps": 36.7
+    }
+  ]
+}
