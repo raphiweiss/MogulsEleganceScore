@@ -154,7 +154,7 @@ def inject_styles() -> None:
                 padding: 10px 14px;
                 border-radius: 10px;
                 margin-top: -15px !important;
-                margin-bottom: 4px !important;
+                margin-bottom: 6px !important;
             }
 
             .sidebar-title-main {
