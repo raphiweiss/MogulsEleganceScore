@@ -601,6 +601,8 @@ def make_scatter_figure(
         if df.empty:
             return
 
+        colors = np.where(df["video_key"] == selected_key, "red", color)
+
         fig.add_trace(
             go.Scatter(
                 x=df["official_score"],
@@ -617,7 +619,7 @@ def make_scatter_figure(
                     ],
                     axis=1,
                 ),
-                marker=dict(size=8, color=color, opacity=0.8),
+                marker=dict(size=8, color=colors, opacity=0.8),
                 hovertemplate=(
                     "<b>%{text}</b><br>"
                     "Athlet: %{customdata[0]}<br>"
@@ -662,26 +664,18 @@ def make_scatter_figure(
     add_regression(women_df, "#1f77b4", "Frauen", "W")
     add_regression(men_df, "#2ca02c", "Männer", "M")
 
-    selected_df = base_df[base_df["video_key"] == selected_key]
-    if not selected_df.empty:
-        fig.add_trace(
-            go.Scatter(
-                x=selected_df["official_score"],
-                y=selected_df["regression_score"],
-                mode="markers",
-                name="Auswahl",
-                text=selected_df["video_label"],
-                marker=dict(size=14, color="red", line=dict(width=2, color="darkred")),
-                hovertemplate=(
-                    "<b>%{text}</b><br>"
-                    "Offizieller Score: %{x:.2f}<br>"
-                    f"{y_axis_label}: "
-                    "%{y:.2f}<extra></extra>"
-                ),
-            )
-        )
-
     title = "MES vs. offizieller Score" if regression_mode == "MES_60" else f"{y_axis_label} vs. offizieller Score"
+
+    fig.add_trace(
+        go.Scatter(
+            x=[None],  # kein echter Punkt
+            y=[None],
+            mode="markers",
+            name="Auswahl",
+            marker=dict(size=8, color="red"),
+            showlegend=True,
+        )
+    )
 
     fig.update_layout(
         title=title,
@@ -1128,28 +1122,8 @@ with st.sidebar:
         st.error("Keine Daten gefunden. Lege all_poses.csv und mes_scores.csv unter ./daten ab.")
         st.stop()
 
-    st.markdown(
-        """
-        <div style="
-            background: linear-gradient(90deg, #1f2937, #111827);
-            color: white;
-            padding:12px 16px;
-            border-radius:12px;
-            margin-top:-15px;
-            margin-bottom:16px;
-        ">
-            <div style="font-size:18px; font-weight:600; line-height:1.25;">
-                Moguls Elegance Score<br>
-                Demotool mit YOLOv8n
-            </div>
-            <div style="font-size:13px; opacity:0.8; margin-top:4px;">
-                Full HD (1920×1080)
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
     st.markdown("#### Videoanalyse")
+
     selected_label = st.selectbox("Sequenz", run_index["label"].tolist())
     selected_row = run_index.loc[run_index["label"] == selected_label].iloc[0]
     selected_key = selected_row["video_key"]
@@ -1207,9 +1181,31 @@ with st.sidebar:
     regression_mode = "MES_60" if regression_mode_label == "MES Total" else "selected_sum"
 
 
+
+
 # ============================================================
 # Hauptlayout oben
 # ============================================================
+st.markdown(
+    """
+    <div style="
+        background: linear-gradient(90deg, #111827, #1f2937);
+        color: white;
+        padding: 14px 18px;
+        border-radius: 14px;
+        margin-bottom: 18px;
+    ">
+        <div style="font-size: 28px; font-weight: 700; line-height: 1.2;">
+            Moguls Elegance Score
+        </div>
+        <div style="font-size: 16px; opacity: 0.9; margin-top: 4px;">
+            Demotool mit YOLOv8n · Full HD (1920×1080)
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
 header_left, header_right = st.columns([0.92, 1.08], gap="large")
 
 
