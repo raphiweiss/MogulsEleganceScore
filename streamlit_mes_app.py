@@ -466,13 +466,13 @@ def build_regression_target(
 
     if not cols:
         df["regression_score"] = np.nan
-        return df, "Ausgewählte Kategorien"
+        return df, "Ausgewählte Metriken"
 
     for col in cols:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
     df["regression_score"] = df[cols].sum(axis=1) * 10
-    return df, "Ausgewählte Kategorien"
+    return df, "Ausgewählte Metriken"
 
 
 def make_scatter_figure(
@@ -580,7 +580,7 @@ def make_scatter_figure(
             x=[None],  # kein echter Punkt
             y=[None],
             mode="markers",
-            name="Auswahl",
+            name="Aktuelles Video",
             marker=dict(size=8, color="red"),
             showlegend=True,
         )
@@ -1120,7 +1120,7 @@ if open_methodik:
 header_left, header_right = st.columns([0.92, 1.08], gap="large")
 
 with header_left:
-    st.markdown("#### Video")
+    st.markdown("#### Video-basierte Pose Estimation")
 with header_right:
     st.markdown("#### Metriken")
 
