@@ -123,13 +123,6 @@ Regelmässigkeit der Turnabfolge.
 **Interpretation (Line Chart):**  
 - periodische Wellen → konstanter Rhythmus  
 - unregelmässige Peaks → inkonsistente Turns  
-
-**Lesart:**  
-- gleichmässig → gute Technik  
-- unruhig → schlechter Rhythmus  
-
-**Bedeutung:**  
-Konstante Turnfrequenz steht für Kontrolle und saubere Technik.
 """
     )
 
@@ -150,13 +143,6 @@ Stabilität des Oberkörpers.
 **Interpretation (Line Chart):**  
 - flache Linie → stabil  
 - Ausschläge → Instabilität  
-
-**Lesart:**  
-- ruhig → gute Kontrolle  
-- schwankend → schlechte Haltung  
-
-**Bedeutung:**  
-Ein stabiler Oberkörper ist ein zentrales Bewertungskriterium.
 """
     )
 
@@ -177,13 +163,6 @@ Knieabstand relativ zur Hüftbreite.
 **Interpretation (Line Chart):**  
 - tiefe Werte → kompakt  
 - hohe Werte → ausladend  
-
-**Lesart:**  
-- konstant → kontrolliert  
-- schwankend → inkonsistent  
-
-**Bedeutung:**  
-Kompakte Haltung verbessert Kontrolle und Effizienz.
 """
     )
 
@@ -207,13 +186,6 @@ Balance zwischen Links- und Rechtsturns.
 
 **Wichtig:**  
 Zeigt lokale Symmetrie, nicht die gesamte Sequenz.
-
-**Lesart:**  
-- konstant hoch → sauber  
-- schwankend → ungleichmässig  
-
-**Bedeutung:**  
-Symmetrie steht für harmonische Bewegung.
 """
     )
 
@@ -237,13 +209,6 @@ Jerk (Änderung der Beschleunigung).
 
 **Wichtig:**  
 Misst nicht Geschwindigkeit, sondern Abruptheit.
-
-**Lesart:**  
-- wenige Peaks → gute Technik  
-- viele Peaks → unsauber  
-
-**Bedeutung:**  
-Ein hoher Smoothness-Score steht für kontrollierte Bewegungen.
 """
     )
 
@@ -264,13 +229,6 @@ Abweichung von der Falllinie.
 **Interpretation (Line Chart):**  
 - ruhiger Verlauf → saubere Linie  
 - schwankend → Abdriften  
-
-**Lesart:**  
-- stabil → gute Kontrolle  
-- unruhig → schlechte Linienführung  
-
-**Bedeutung:**  
-Wichtig für Effizienz, aber schwieriger visuell zu interpretieren.
 """
     )
 
