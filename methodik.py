@@ -1,255 +1,348 @@
 import streamlit as st
-
 def render_methodik() -> None:
-    st.markdown("## Methodik & Hintergrund")
 
+    # --------------------------------------------------
+    # Motivation & Ziel
+    # --------------------------------------------------
+    st.markdown("### Motivation & Ziel")
     st.markdown(
         """
-## Quantitative Approximation der FIS-Turnbewertung im Moguls-Skiing mittels Pose Tracking
+Diese Arbeit untersucht, inwiefern die Bewertung von Turns im Moguls-Skiing
+durch datenbasierte Bewegungsmetriken nachvollzogen werden kann.
 
-Eine Untersuchung, ob die durch menschliche Bewertungen entstandene Rangliste eines Mogul-Wettbewerbs
-(Winter Olympics 2026) mittels datenbasierter Analyse von Skelett-Tracking repliziert werden kann.
+Grundlage bilden Videoaufnahmen aus den **Final-Läufen der Olympischen Spiele 2026**.
+Der Fokus liegt auf der technischen Bewertung der Turns, die rund **60 %** der Gesamtwertung ausmachen.
+
+Ziel ist es, interpretierbare Bewegungsmetriken aus Videodaten abzuleiten und deren Zusammenhang
+mit den offiziellen Wettkampfscores zu analysieren.
 """
     )
 
-    st.markdown("## Ziel")
+    st.divider()
+
+    # --------------------------------------------------
+    # Daten
+    # --------------------------------------------------
+    st.markdown("### Daten & Pose Estimation")
     st.markdown(
         """
-Von den drei Aspekten der Gesamtbewertung – **Sprünge, Geschwindigkeit und Technik** – konzentriert sich
-dieses Projekt auf den Bereich **Technik**, konkret die sogenannten **Turns**, die 60 % der Endbewertung ausmachen.
+- Videoaufnahmen einzelner Athletinnen und Athleten (ca. 3–4 Sekunden, ~25 fps, Full HD)  
+- Pose Estimation mittels **YOLOv8n** (Ultralytics)  
+- Pro Frame extrahiert:
+  - 17 Keypoints (2D)
+  - Bounding Box
+  - Confidence Scores  
 
-Die Athleten werden entlang der Piste von mehreren Wettkampfrichtern bewertet. Der Durchschnitt ihrer Bewertungen
-bestimmt den Rang des Athleten.
-
-Ziel ist es, auf Basis von aus Videoaufnahmen gewonnenen Bewegungsdaten Metriken zu berechnen, die das von Menschen
-erstellte Ranking möglichst gut nachvollziehen können.
+Relevante Gelenkpunkte:
+- Hüfte (links/rechts)  
+- Knie (links/rechts)  
+- Schulter (links/rechts)
 """
     )
 
-    st.markdown("## Forschungsfrage")
+    # --------------------------------------------------
+    # Preprocessing
+    # --------------------------------------------------
+    st.markdown("### Preprocessing")
     st.markdown(
         """
-Lassen sich subjektive, ästhetische Sportbewegungen durch objektive, datenbasierte Bewertungskriterien approximieren?
+- **Interpolation:** zeitliche Interpolation fehlender Keypoints  
+- **Glättung:** Savitzky-Golay-Filter  
+- **Referenzsignal:** Hüftmittelpunkt  
+
+Einschränkungen:
+- ausschliesslich 2D-Daten  
+- mögliche Tracking-Artefakte  
+- keine Tiefeninformation
 """
     )
 
-    st.markdown("## Verwendete Tools")
+    # --------------------------------------------------
+    # Pipeline
+    # --------------------------------------------------
+    st.markdown("### Pipeline")
+    st.markdown(
+        "**Video → Pose Estimation → Preprocessing → Metriken → MES → Score Comparison**"
+    )
+
+    st.divider()
+
+    # --------------------------------------------------
+    # MES Formel
+    # --------------------------------------------------
+    st.markdown("### Mogul Elegance Score (MES)")
+    st.latex(r"MES = 10 \cdot (R + S + C + Y + M + L)")
+
     st.markdown(
         """
-Die Extraktion der Bewegungsdaten aus den Videos erfolgt mittels **YOLO** (Pose Estimation).  
-Die Datenaufbereitung sowie die Berechnung der Metriken werden in **Python** durchgeführt.  
-Die visuelle Darstellung erfolgt in Form eines interaktiven Dashboards mit **Streamlit**.
+Alle Metriken sind auf **[0,1] normiert** und gleich gewichtet.
+
+- **R** = Rhythmus  
+- **S** = Stabilität  
+- **C** = Kompaktheit  
+- **Y** = Symmetrie  
+- **M** = Smoothness  
+- **L** = Line Integrity  
+
+Ein hoher MES-Wert entspricht einer rhythmischen, stabilen, kompakten und kontrollierten Fahrweise.
 """
     )
 
-    st.markdown("## Python-Version und Bibliotheken")
+    st.divider()
+
+    # --------------------------------------------------
+    # Intro Metriken
+    # --------------------------------------------------
+    st.markdown("### Bewegungsmetriken")
     st.markdown(
         """
-Für die Durchführung des Projekts wird **Python 3.12 oder höher** benötigt.
+Alle Metriken basieren auf der zeitlichen Entwicklung des **Hüftmittelpunkts** sowie ausgewählter Gelenkwinkel.
+Die Darstellung erfolgt als **Zeitreihen (Line Charts)**.
 
-Verwendete Bibliotheken:
-- **numpy** – Berechnung der Metriken  
-- **pandas** – Datenverarbeitung  
-- **matplotlib** – visuelle Datenanalyse  
-- **ultralytics** – Pose Estimation mittels YOLOv8  
-- **streamlit** – Erstellung des Dashboards
+Wichtig: Die Liniencharts zeigen nicht direkt den Score, sondern das zugrunde liegende Bewegungssignal.
+Form, Peaks und Stabilität der Kurven lassen sich direkt als Bewegungsqualität interpretieren.
 """
     )
 
-    st.markdown("## Datenquellen")
+    # --------------------------------------------------
+    # Rhythmus
+    # --------------------------------------------------
+    st.markdown("---")
+    st.markdown("#### Rhythmus (R)")
     st.markdown(
         """
-Die Bewegungsdaten stammen aus Videoaufnahmen der einzelnen Athleten.  
-Die Videos wurden so zugeschnitten, dass ausschließlich die **Turns** analysiert werden.
+**Definition:**  
+Regelmässigkeit der Turnabfolge.
 
-Die offiziellen Bewertungen und Ranglisten wurden von der Website der Olympischen Spiele übernommen.  
-Die Bewertungskriterien basieren auf dem offiziellen **FIS Freestyle Skiing Judging Handbook**.
+**Technik:**  
+- laterale Hüftbewegung  
+- Detektion von Maxima/Minima  
+- Zeitabstände zwischen Turns  
+- Varianz der Abstände  
+
+**Interpretation (Line Chart):**  
+- periodische Wellen → konstanter Rhythmus  
+- unregelmässige Peaks → inkonsistente Turns  
+
+**Lesart:**  
+- gleichmässig → gute Technik  
+- unruhig → schlechter Rhythmus  
+
+**Bedeutung:**  
+Konstante Turnfrequenz steht für Kontrolle und saubere Technik.
 """
     )
 
-    st.markdown("## Daten & Preprocessing")
+    # --------------------------------------------------
+    # Stabilität
+    # --------------------------------------------------
+    st.markdown("---")
+    st.markdown("#### Stabilität (S)")
     st.markdown(
         """
-Die Bewegungsdaten werden mittels **YOLO Pose Estimation** aus den Videos extrahiert.
+**Definition:**  
+Stabilität des Oberkörpers.
 
-Für jedes Video wird eine CSV-Datei erzeugt, die frameweise folgende Informationen enthält:
-- Frame-Index  
-- Track-ID des Athleten  
-- Bounding-Box-Koordinaten  
-- 2D-Pixelkoordinaten der Keypoints  
-- Confidence-Werte der Detektion  
+**Technik:**  
+- Schulterwinkel  
+- zeitliche Varianz  
 
-Das verwendete Modell erkennt insgesamt **17 Gelenkpunkte**.
+**Interpretation (Line Chart):**  
+- flache Linie → stabil  
+- Ausschläge → Instabilität  
 
-Für die Analyse der Turns werden insbesondere folgende Keypoints verwendet:
-- linke und rechte Hüfte  
-- linkes und rechtes Knie  
-- linke und rechte Schulter
+**Lesart:**  
+- ruhig → gute Kontrolle  
+- schwankend → schlechte Haltung  
+
+**Bedeutung:**  
+Ein stabiler Oberkörper ist ein zentrales Bewertungskriterium.
 """
     )
 
-    st.markdown("### Umgang mit fehlenden Werten")
+    # --------------------------------------------------
+    # Kompaktheit
+    # --------------------------------------------------
+    st.markdown("---")
+    st.markdown("#### Kompaktheit (C)")
     st.markdown(
         """
-Beim Pose Tracking können temporär einzelne Keypoints fehlen, zum Beispiel durch:
-- Okklusion durch Moguls  
-- Bewegungsunschärfe  
-- ungünstige Kameraperspektiven  
+**Definition:**  
+Knieabstand relativ zur Hüftbreite.
 
-Fehlende Werte werden durch **lineare Interpolation** über die Zeit ersetzt, um kontinuierliche Bewegungssignale
-zu gewährleisten. Frames mit dauerhaft geringer Detektionssicherheit können optional ausgeschlossen werden.
+**Technik:**  
+- Kniedistanz  
+- Normalisierung  
+
+**Interpretation (Line Chart):**  
+- tiefe Werte → kompakt  
+- hohe Werte → ausladend  
+
+**Lesart:**  
+- konstant → kontrolliert  
+- schwankend → inkonsistent  
+
+**Bedeutung:**  
+Kompakte Haltung verbessert Kontrolle und Effizienz.
 """
     )
 
-    st.markdown("### Signalglättung")
+    # --------------------------------------------------
+    # Symmetrie
+    # --------------------------------------------------
+    st.markdown("---")
+    st.markdown("#### Symmetrie (Y)")
     st.markdown(
         """
-Da numerische Ableitungen – etwa für die Smoothness-Metrik – empfindlich auf Rauschen reagieren, werden die
-Positionssignale mittels **Savitzky–Golay-Filter** geglättet.
+**Definition:**  
+Balance zwischen Links- und Rechtsturns.
 
-Dieser ermöglicht:
-- Reduktion von Messrauschen  
-- Erhalt der Bewegungsstruktur  
-- stabile Berechnung von Geschwindigkeit, Beschleunigung und Jerk
+**Technik:**  
+- laterale Hüftbewegung  
+- Rolling Window  
+
+**Interpretation (Line Chart):**  
+- hohe Werte → lokal symmetrisch  
+- tiefe Werte → eine Seite dominiert  
+
+**Wichtig:**  
+Zeigt lokale Symmetrie, nicht die gesamte Sequenz.
+
+**Lesart:**  
+- konstant hoch → sauber  
+- schwankend → ungleichmässig  
+
+**Bedeutung:**  
+Symmetrie steht für harmonische Bewegung.
 """
     )
 
-    st.markdown("### Einschränkungen der Daten")
+    # --------------------------------------------------
+    # Smoothness
+    # --------------------------------------------------
+    st.markdown("---")
+    st.markdown("#### Smoothness (M)")
     st.markdown(
         """
-- ausschließlich 2D-Bewegungsinformationen verfügbar  
-- keine direkte Information über Tiefenbewegung oder Skikantenwinkel  
-- kamerabedingte Verzerrungen der Bewegungsamplituden  
-- mögliche Artefakte durch Tracking-Fehler  
+**Definition:**  
+Jerk (Änderung der Beschleunigung).
 
-Trotz dieser Einschränkungen ermöglichen die Daten eine robuste Approximation der Bewegungsqualität.
+**Technik:**  
+- Ableitungen der Hüftbewegung  
+- Berechnung des Jerk  
+
+**Interpretation (Line Chart):**  
+- ruhiger Verlauf → flüssig  
+- Peaks → ruckartig  
+
+**Wichtig:**  
+Misst nicht Geschwindigkeit, sondern Abruptheit.
+
+**Lesart:**  
+- wenige Peaks → gute Technik  
+- viele Peaks → unsauber  
+
+**Bedeutung:**  
+Ein hoher Smoothness-Score steht für kontrollierte Bewegungen.
 """
     )
 
-    st.markdown("## Datenpipeline")
-    st.code("Video → YOLO Pose → Signal Processing → Metriken → Ranking → Vergleich")
-
-    st.markdown("## Berechnung der Bewertungsmetriken")
+    # --------------------------------------------------
+    # Line Integrity
+    # --------------------------------------------------
+    st.markdown("---")
+    st.markdown("#### Line Integrity (L)")
     st.markdown(
         """
-Zur Approximation der Turn-Bewertung werden mehrere Bewegungsmetriken aus den Pose-Daten berechnet.
+**Definition:**  
+Abweichung von der Falllinie.
 
-Zentrale Grundlage ist die zeitliche Entwicklung des **Hüftmittelpunkts**, berechnet aus linker und rechter Hüfte.
+**Technik:**  
+- Bewegungsvektor  
+- Winkelabweichung  
 
-Diese Trajektorie beschreibt die laterale Bewegung entlang der Mogul-Linie und bildet das zentrale Signal für die Analyse.
+**Interpretation (Line Chart):**  
+- ruhiger Verlauf → saubere Linie  
+- schwankend → Abdriften  
+
+**Lesart:**  
+- stabil → gute Kontrolle  
+- unruhig → schlechte Linienführung  
+
+**Bedeutung:**  
+Wichtig für Effizienz, aber schwieriger visuell zu interpretieren.
 """
     )
 
-    st.markdown("### Rhythmus-Metrik (R)")
+    st.divider()
+
+    # --------------------------------------------------
+    # Evaluation
+    # --------------------------------------------------
+    st.markdown("### Evaluation")
     st.markdown(
         """
-Bewertet die Regelmäßigkeit der Turnabfolge.
-
-Basierend auf:
-- Detektion von Extrempunkten  
-- zeitlichen Abständen zwischen Turns  
-- Varianz dieser Abstände  
-
-Ein hoher Score entspricht einer gleichmäßigen Turnfrequenz.
+- Vergleich mit offiziellen Scores  
+- Regressionsanalyse  
+- Visualisierung (Zeitreihen, Radar, Scatter)
 """
     )
 
-    st.markdown("### Stabilitäts-Metrik (S)")
+    # --------------------------------------------------
+    # Erkenntnisse
+    # --------------------------------------------------
+    st.markdown("### Zentrale Erkenntnisse")
     st.markdown(
         """
-Bewertet die Stabilität der Oberkörperhaltung.
+Am besten interpretierbar und korrelierend:
+- Stabilität  
+- Rhythmus  
+- Kompaktheit  
 
-Basierend auf:
-- Schulterwinkel relativ zur Horizontalen  
-- Streuung dieses Winkels über die Zeit  
-
-Hohe Werte zeigen eine ruhige und stabile Oberkörperführung.
+Schwieriger:
+- Symmetrie  
+- Smoothness  
+- Line Integrity
 """
     )
 
-    st.markdown("### Smoothness-Metrik (M)")
+    # --------------------------------------------------
+    # Limitationen
+    # --------------------------------------------------
+    st.markdown("### Limitationen")
     st.markdown(
         """
-Misst die Bewegungsglätte anhand der dritten Ableitung der Hüftbewegung (**Jerk**).
-
-Hohe Jerk-Werte entstehen insbesondere durch:
-- abrupte Richtungswechsel  
-- Skidding  
-- instabile Bewegungen  
-
-Ein hoher Score entspricht flüssigen und technisch sauberen Turns.
+- Nur Turns berücksichtigt  
+- Kurze Sequenzen  
+- Tracking-Fehler möglich  
+- 2D statt 3D
 """
     )
 
-    st.markdown("### Symmetrie-Metrik (Y)")
+    # --------------------------------------------------
+    # Fazit
+    # --------------------------------------------------
+    st.markdown("### Fazit")
     st.markdown(
         """
-Bewertet die Balance zwischen Links- und Rechtsturns.
+Teilweise erfolgreiche Approximation der Bewertung.
 
-Verglichen werden:
-- mittlere Amplituden der lateralen Auslenkung  
-
-Ein hoher Wert bedeutet eine symmetrische Bewegungsausführung.
+Stärke liegt in der **Interpretierbarkeit der Bewegung**.
 """
     )
 
-    st.markdown("### Kompaktheits-Metrik (C)")
+    # --------------------------------------------------
+    # Danksagung
+    # --------------------------------------------------
+    st.markdown("### Danksagung")
     st.markdown(
         """
-Beschreibt die Stabilität der unteren Körperhaltung.
+Wir danken **Dr. Manuel Stein**, **Dr. Daniel Seebacher** sowie **Philipp Zimmermann**.
 
-Basierend auf:
-- Abstand der Knie relativ zur Hüftbreite  
+Aaron Gitz  
+Simon Kim  
+Raphael Weiss  
 
-Eine geringe Knieöffnung entspricht einer kompakten und kontrollierten Fahrtechnik.
-"""
-    )
-
-    st.markdown("### Linienintegrität / Ausrichtung (L)")
-    st.markdown(
-        """
-Bewertet die Stabilität der Fahrtrichtung entlang der Falllinie.
-
-Basierend auf:
-- Bewegungsvektor des Hüftmittelpunkts  
-- Winkelabweichung zur idealen Linie  
-
-Ein hoher Score bedeutet eine stabile Linienführung mit geringer seitlicher Abweichung.
-"""
-    )
-
-    st.markdown("## Dashboard (aktueller Stand)")
-    st.markdown(
-        """
-Im Dashboard kann ein Athlet ausgewählt werden.  
-Das Video wird abgespielt und die berechneten Metriken werden synchron visualisiert.
-"""
-    )
-
-    st.markdown("## Limitationen")
-    st.markdown(
-        """
-- Der Vergleich basiert nur auf dem Turn-Anteil der Bewertung  
-- Die offiziellen Ranglisten berücksichtigen zusätzlich Geschwindigkeit und Sprünge  
-- Kurze Sequenzen von ca. 3–4 Sekunden bei rund 25 fps  
-- Begrenzte Auflösung der Person im Bild  
-- Sensitivität einzelner Metriken gegenüber Messfehlern
-"""
-    )
-
-    st.markdown("## Entwicklungsmöglichkeiten")
-    st.markdown(
-        """
-- Analyse kompletter Runs  
-- Integration der Bewertungsbereiche Geschwindigkeit und Sprünge  
-- Erstellung einer vollständig datenbasierten Rangliste
-"""
-    )
-
-    st.markdown("## Danksagung")
-    st.markdown(
-        """
-Der Dank gilt Herrn **Dr. Manuel Stein** sowie **Dr. Daniel Seebacher** und **Herrn Philipp Zimmermann**
-für die Betreuung und die Einführung in dieses Thema.
+28. März 2026
 """
     )

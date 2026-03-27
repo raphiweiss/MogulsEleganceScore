@@ -42,20 +42,22 @@ VIDEO_EXTENSIONS = {".mp4", ".mov", ".webm", ".m4v"}
 
 METRICS = {
     "rhythmus": {"label": "Rhythmus", "y": "x (px)"},
-    "symmetrie": {"label": "Symmetrie", "y": "Y"},
     "stabilitaet": {"label": "Stabilität", "y": "θ (°)"},
-    "smoothness": {"label": "Smoothness", "y": "Jerk"},
     "kompaktheit": {"label": "Kompaktheit", "y": "K"},
-    "line_integrity": {"label": "Ausrichtung", "y": "φ (°)"},
+    "symmetrie": {"label": "Symmetrie", "y": "Y"},
+    "smoothness": {"label": "Smoothness", "y": "Jerk"},
+    "line_integrity": {"label": "Line-Integrity", "y": "φ (°)"},
+    
+
 }
 
 MES_COMPONENTS = [
     ("Rhythmus", "R"),
-    ("Symmetrie", "Y"),
     ("Stabilität", "S"),
-    ("Smoothness", "M"),
-    ("Ausrichtung", "L"),
     ("Kompaktheit", "C"),
+    ("Symmetrie", "Y"),
+    ("Smoothness", "M"),
+    ("Line-Integrity", "L"),
 ]
 
 COMPONENT_MAP = {label: key for label, key in MES_COMPONENTS}
@@ -312,8 +314,8 @@ def compute_plot_timeseries(poses_df: pd.DataFrame, fps: float = DEFAULT_FPS) ->
             "symmetrie": symmetrie,
             "stabilitaet": theta,
             "smoothness": jerk,
-            "kompaktheit": kompaktheit,
             "line_integrity": phi,
+            "kompaktheit": kompaktheit,
         }
     )
 
@@ -400,11 +402,12 @@ def get_summary_for_key(scores_df: pd.DataFrame, video_key: str, scatter_df: pd.
     if match.empty:
         return {
             "R": np.nan,
-            "Y": np.nan,
             "S": np.nan,
+            "C": np.nan,
+            "Y": np.nan,
             "M": np.nan,
             "L": np.nan,
-            "C": np.nan,
+
             "MES_60": np.nan,
             "official_score": np.nan,
             "Gender": None,
@@ -613,11 +616,12 @@ def make_radar_figure(summary: dict[str, Any], color: str | None = None) -> go.F
     labels = ["R", "Y", "S", "M", "L", "C"]
     label_names = {
         "R": "Rhythmus",
-        "Y": "Symmetrie",
         "S": "Stabilität",
-        "M": "Smoothness",
-        "L": "Ausrichtung",
         "C": "Kompaktheit",
+        "Y": "Symmetrie",
+        "M": "Smoothness",
+        "L": "Line-Integrity",
+
     }
 
     values = [
