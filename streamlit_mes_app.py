@@ -47,8 +47,6 @@ METRICS = {
     "symmetrie": {"label": "Symmetrie", "y": "Y"},
     "smoothness": {"label": "Smoothness", "y": "Jerk"},
     "line_integrity": {"label": "Line-Integrity", "y": "φ (°)"},
-    
-
 }
 
 MES_COMPONENTS = [
