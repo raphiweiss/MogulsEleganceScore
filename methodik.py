@@ -96,8 +96,7 @@ Ein hoher MES-Wert entspricht einer rhythmischen, stabilen, kompakten und kontro
     st.markdown("### Bewegungsmetriken")
     st.markdown(
         """
-Alle Metriken basieren auf der zeitlichen Entwicklung des **Hüftmittelpunkts** sowie ausgewählter Gelenkwinkel.
-Die Darstellung erfolgt als **Zeitreihen (Line Charts)**.
+Die Metriken basieren auf der zeitlichen Entwicklung des Hüftmittelpunkts sowie weiterer relevanter Keypoints (Knie und Schultern) und daraus abgeleiteter Grössen wie Gelenkwinkel und Bewegungsvektoren.
 
 Wichtig: Die Liniencharts zeigen nicht direkt den Score, sondern das zugrunde liegende Bewegungssignal.
 Form, Peaks und Stabilität der Kurven lassen sich direkt als Bewegungsqualität interpretieren.
@@ -240,9 +239,10 @@ Abweichung von der Falllinie.
     st.markdown("### Evaluation")
     st.markdown(
         """
-- Vergleich mit offiziellen Scores  
-- Regressionsanalyse  
-- Visualisierung (Zeitreihen, Radar, Scatter)
+- Synchronisierte Darstellung von Video, Pose Estimation und Zeitreihen  
+- Visuelle Analyse mit Zeitreihen, Radar-Chart und Scatterplots 
+- Vergleich mit offiziellen Turns-Scores  
+- Regressionsanalyse (Metriken → Score)  
 """
     )
 
@@ -252,11 +252,11 @@ Abweichung von der Falllinie.
     st.markdown("### Zentrale Erkenntnisse")
     st.markdown(
         """
-Am besten interpretierbar und korrelierend:
+Teilweise erfolgreiche Approximation der Bewertung. Am besten interpretierbar und korrelierend mit dem offiziellen Score:
+- Rhythmus 
 - Stabilität  
-- Rhythmus  
 - Kompaktheit  
-
+ 
 Schwieriger:
 - Symmetrie  
 - Smoothness  
@@ -270,22 +270,12 @@ Schwieriger:
     st.markdown("### Limitationen")
     st.markdown(
         """
-- Nur Turns berücksichtigt  
-- Kurze Sequenzen  
-- Tracking-Fehler möglich  
-- 2D statt 3D
-"""
-    )
-
-    # --------------------------------------------------
-    # Fazit
-    # --------------------------------------------------
-    st.markdown("### Fazit")
-    st.markdown(
-        """
-Teilweise erfolgreiche Approximation der Bewertung.
-
-Stärke liegt in der **Interpretierbarkeit der Bewegung**.
+- Fokus ausschliesslich auf Turns
+- Kurze Videosequenzen  
+- Begrenzte Framerate (~25 fps)
+- Geringe Auflösung der Person im Bild
+- Anfälligkeit für Messfehler bei einzelnen Metriken
+- 2D-Daten ohne Tiefeninformation
 """
     )
 
@@ -296,7 +286,7 @@ Stärke liegt in der **Interpretierbarkeit der Bewegung**.
     st.markdown(
         """
 Wir danken **Dr. Manuel Stein**, **Dr. Daniel Seebacher** sowie **Philipp Zimmermann**
-für die fachliche Betreuung, wertvolle Impulse und die Unterstützung im Rahmen dieses Projekts.
+für die inspirierende Vorlesung, die wertvollen Impulse und die fachliche Unterstützung im Rahmen dieses Projekts.
 
 Aaron Gitz  
 Simon Kim  
