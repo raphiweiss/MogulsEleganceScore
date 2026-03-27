@@ -295,7 +295,8 @@ Stärke liegt in der **Interpretierbarkeit der Bewegung**.
     st.markdown("### Danksagung")
     st.markdown(
         """
-Wir danken **Dr. Manuel Stein**, **Dr. Daniel Seebacher** sowie **Philipp Zimmermann**.
+Wir danken **Dr. Manuel Stein**, **Dr. Daniel Seebacher** sowie **Philipp Zimmermann**
+für die fachliche Betreuung, wertvolle Impulse und die Unterstützung im Rahmen dieses Projekts.
 
 Aaron Gitz  
 Simon Kim  
